@@ -31,6 +31,37 @@ const RECIPES = [
 ];
 const RECIPE_BY_ID = Object.fromEntries(RECIPES.map((r) => [r.id, r]));
 
+// ---- Catalogue de décoration ----
+const DECOR_CATALOG = {
+  murs: [
+    { id: "mur_noyer", label: "Brun noyer", cost: 0, color: "#4A3423" },
+    { id: "mur_sauge", label: "Sauge", cost: 30, color: "#5C6E4F" },
+    { id: "mur_terracotta", label: "Terracotta", cost: 30, color: "#B5613A" },
+    { id: "mur_prune", label: "Prune", cost: 45, color: "#5B3A56" },
+  ],
+  sols: [
+    { id: "sol_clair", label: "Bois clair", cost: 0, color: "#C89B6D" },
+    { id: "sol_fonce", label: "Bois foncé", cost: 25, color: "#6B4226" },
+    { id: "sol_terracotta", label: "Carreaux terracotta", cost: 35, color: "#C1663B" },
+  ],
+  tables: [
+    { id: "table_brut", label: "Bois brut", cost: 0, color: "#8B5E34" },
+    { id: "table_marbre", label: "Marbre", cost: 45, color: "#D8D2C4" },
+    { id: "table_nuit", label: "Bleu nuit", cost: 45, color: "#2E3A59" },
+  ],
+  plantes: [
+    { id: "plante_aucune", label: "Aucune", cost: 0, emoji: "" },
+    { id: "plante_basilic", label: "Basilic", cost: 20, emoji: "🌿" },
+    { id: "plante_oranger", label: "Oranger", cost: 50, emoji: "🍊" },
+  ],
+  luminaire: [
+    { id: "lum_ampoule", label: "Ampoule nue", cost: 0, emoji: "💡" },
+    { id: "lum_guirlande", label: "Guirlande", cost: 40, emoji: "✨" },
+    { id: "lum_lanterne", label: "Lanterne", cost: 60, emoji: "🏮" },
+  ],
+};
+const CATEGORY_LABELS = { murs: "Murs", sols: "Sol", tables: "Tables", plantes: "Plantes", luminaire: "Éclairage" };
+
 let idCounter = 1;
 const nextId = () => idCounter++;
 
@@ -62,38 +93,20 @@ function makeCustomer() {
   };
 }
 
+function defaultEquipped() {
+  return Object.fromEntries(Object.entries(DECOR_CATALOG).map(([cat, items]) => [cat, items[0].id]));
+}
+function defaultOwned() {
+  return new Set(Object.values(DECOR_CATALOG).flatMap((items) => [items[0].id]));
+}
+
 // ---- Anneau de friture ----
 function Ring({ progress, quality, recipe, onClick, empty, onChooseRecipe }) {
   if (empty) {
     return (
-      <div
-        style={{
-          width: 92,
-          height: 92,
-          borderRadius: 18,
-          border: `2px dashed ${COLORS.gold}55`,
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gridTemplateRows: "1fr 1fr",
-          gap: 2,
-          padding: 4,
-        }}
-      >
+      <div style={{ width: 92, height: 92, borderRadius: 18, border: `2px dashed ${COLORS.gold}55`, display: "grid", gridTemplateColumns: "1fr 1fr", gridTemplateRows: "1fr 1fr", gap: 2, padding: 4 }}>
         {RECIPES.map((r) => (
-          <button
-            key={r.id}
-            onClick={() => onChooseRecipe(r.id)}
-            title={r.label}
-            className="flavor-cell"
-            style={{
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              fontSize: 18,
-              borderRadius: 8,
-              color: COLORS.text,
-            }}
-          >
+          <button key={r.id} onClick={() => onChooseRecipe(r.id)} title={r.label} className="flavor-cell" style={{ background: "transparent", border: "none", cursor: "pointer", fontSize: 18, borderRadius: 8, color: COLORS.text }}>
             {r.emoji}
           </button>
         ))}
@@ -108,55 +121,25 @@ function Ring({ progress, quality, recipe, onClick, empty, onChooseRecipe }) {
   const recipeInfo = RECIPE_BY_ID[recipe];
 
   return (
-    <button
-      onClick={onClick}
-      title="Cliquer pour sortir de la friture"
-      className={`ring-wrap ${isDanger ? "ring-danger" : ""}`}
-      style={{ position: "relative", width: 92, height: 92, borderRadius: "50%", border: "none", background: "transparent", cursor: "pointer", padding: 0 }}
-    >
+    <button onClick={onClick} title="Cliquer pour sortir de la friture" className={`ring-wrap ${isDanger ? "ring-danger" : ""}`} style={{ position: "relative", width: 92, height: 92, borderRadius: "50%", border: "none", background: "transparent", cursor: "pointer", padding: 0 }}>
       <div style={{ position: "absolute", inset: 0, borderRadius: "50%", background: conic, transition: "background 0.15s linear" }} />
-      <div
-        className="ring-body"
-        style={{
-          position: "absolute",
-          inset: 8,
-          borderRadius: "50%",
-          background: `radial-gradient(circle at 35% 30%, ${color}ee, ${color})`,
-          boxShadow: isDanger ? `0 0 14px 4px ${COLORS.coral}88` : `0 0 8px ${color}55`,
-        }}
-      >
+      <div className="ring-body" style={{ position: "absolute", inset: 8, borderRadius: "50%", background: `radial-gradient(circle at 35% 30%, ${color}ee, ${color})`, boxShadow: isDanger ? `0 0 14px 4px ${COLORS.coral}88` : `0 0 8px ${color}55` }}>
         <div style={{ position: "absolute", inset: 8, borderRadius: "50%", border: `5px solid ${COLORS.bg}`, opacity: 0.35 }} />
         <span className="bubble b1" />
         <span className="bubble b2" />
         <span className="bubble b3" />
       </div>
-      <div
-        style={{
-          position: "absolute",
-          top: -4,
-          right: -4,
-          width: 22,
-          height: 22,
-          borderRadius: "50%",
-          background: COLORS.bg,
-          border: `1px solid ${COLORS.gold}`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 12,
-        }}
-        title={recipeInfo.label}
-      >
+      <div style={{ position: "absolute", top: -4, right: -4, width: 22, height: 22, borderRadius: "50%", background: COLORS.bg, border: `1px solid ${COLORS.gold}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }} title={recipeInfo.label}>
         {recipeInfo.emoji}
       </div>
-      <div style={{ position: "absolute", bottom: -22, left: 0, right: 0, fontSize: 10, color: COLORS.text, fontWeight: 600 }}>
-        {Math.round(pct)}%
-      </div>
+      <div style={{ position: "absolute", bottom: -22, left: 0, right: 0, fontSize: 10, color: COLORS.text, fontWeight: 600 }}>{Math.round(pct)}%</div>
     </button>
   );
 }
 
 export default function OnionRingCafe() {
+  const [view, setView] = useState("cuisine"); // 'cuisine' | 'deco'
+
   const [baskets, setBaskets] = useState(Array.from({ length: BASKET_COUNT }, () => null));
   const [tray, setTray] = useState([]);
   const [customers, setCustomers] = useState([makeCustomer()]);
@@ -169,6 +152,13 @@ export default function OnionRingCafe() {
   const toastTimeout = useRef(null);
   const isOpen = running && reputation > 0;
 
+  // Gestion / progression (persiste entre les journées, pas encore entre les sessions)
+  const [coins, setCoins] = useState(20);
+  const [owned, setOwned] = useState(defaultOwned);
+  const [equipped, setEquipped] = useState(defaultEquipped);
+  const [totalServed, setTotalServed] = useState(0);
+  const [bestScore, setBestScore] = useState(0);
+
   const showToast = useCallback((msg, kind = "info") => {
     setToast({ msg, kind, key: nextId() });
     clearTimeout(toastTimeout.current);
@@ -178,14 +168,12 @@ export default function OnionRingCafe() {
   useEffect(() => {
     if (!isOpen) return;
     const tick = setInterval(() => {
-      setBaskets((prev) =>
-        prev.map((b) => {
-          if (!b) return b;
-          const newProgress = b.progress + COOK_SPEED;
-          if (newProgress >= 100 + 15) return null;
-          return { ...b, progress: newProgress };
-        })
-      );
+      setBaskets((prev) => prev.map((b) => {
+        if (!b) return b;
+        const newProgress = b.progress + COOK_SPEED;
+        if (newProgress >= 100 + 15) return null;
+        return { ...b, progress: newProgress };
+      }));
 
       setCustomers((prev) => {
         const next = [];
@@ -213,8 +201,13 @@ export default function OnionRingCafe() {
     return () => clearInterval(spawn);
   }, [isOpen]);
 
+  useEffect(() => {
+    setBestScore((b) => Math.max(b, score));
+  }, [score]);
+
   const bumpScore = (amount) => {
     setScore((s) => s + amount);
+    setCoins((c) => c + amount);
     setScoreBump(true);
     setTimeout(() => setScoreBump(false), 260);
   };
@@ -266,6 +259,7 @@ export default function OnionRingCafe() {
 
     setTray((t) => t.filter((r) => r.id !== ringId));
     setCustomers((prev) => prev.filter((c) => c.id !== customerId));
+    setTotalServed((n) => n + 1);
 
     const base = QUALITY_POINTS[ring.quality];
     const matches = ring.recipe === customer.wants;
@@ -297,6 +291,21 @@ export default function OnionRingCafe() {
     setRunning(true);
   };
 
+  const buyDecor = (category, item) => {
+    if (owned.has(item.id)) {
+      setEquipped((e) => ({ ...e, [category]: item.id }));
+      return;
+    }
+    if (coins < item.cost) {
+      showToast("Pas assez de pièces pour ça...", "bad");
+      return;
+    }
+    setCoins((c) => c - item.cost);
+    setOwned((o) => new Set(o).add(item.id));
+    setEquipped((e) => ({ ...e, [category]: item.id }));
+    showToast(`${item.label} installé·e !`, "good");
+  };
+
   return (
     <div style={{ minHeight: "100%", background: `linear-gradient(180deg, ${COLORS.bg}, #1c130c)`, color: COLORS.text, fontFamily: "'Segoe UI', system-ui, sans-serif", padding: 24, boxSizing: "border-box" }}>
       <style>{`
@@ -306,6 +315,7 @@ export default function OnionRingCafe() {
         @keyframes toastIn { 0% { transform: translate(-50%, 12px) scale(0.9); opacity: 0; } 100% { transform: translate(-50%, 0) scale(1); opacity: 1; } }
         @keyframes scorePulse { 0% { transform: scale(1); } 40% { transform: scale(1.28); } 100% { transform: scale(1); } }
         @keyframes patienceLow { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+        @keyframes twinkle { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
         .ring-wrap { animation: popIn 0.25s ease-out; }
         .ring-danger { animation: shakeRing 0.35s infinite; }
         .bubble { position: absolute; width: 6px; height: 6px; border-radius: 50%; background: ${COLORS.cream}aa; animation: sizzle 0.6s ease-in-out infinite; }
@@ -319,12 +329,17 @@ export default function OnionRingCafe() {
         .customer-row:hover { border-color: ${COLORS.gold} !important; }
         .tray-ring { transition: transform 0.15s; }
         .tray-ring:hover { transform: scale(1.15); }
+        .tab-btn { transition: all 0.15s; }
+        .tab-btn:hover { transform: translateY(-1px); }
+        .decor-card { transition: transform 0.15s, border-color 0.15s; }
+        .decor-card:hover { transform: translateY(-2px); border-color: ${COLORS.gold} !important; }
+        .sparkle { position: absolute; font-size: 12px; animation: twinkle 1.2s ease-in-out infinite; }
       `}</style>
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 24, color: COLORS.gold }}>🧅 Onion Ring Café</h1>
-          <div style={{ fontSize: 12, opacity: 0.7 }}>Prototype — friture, recettes &amp; service</div>
+          <div style={{ fontSize: 12, opacity: 0.7 }}>Prototype — friture, recettes &amp; déco</div>
         </div>
         <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
           <div style={{ textAlign: "right" }}>
@@ -332,8 +347,12 @@ export default function OnionRingCafe() {
             <div className={scoreBump ? "score-bump" : ""} style={{ fontSize: 22, fontWeight: 700, color: COLORS.gold }}>{score}</div>
           </div>
           <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 12, opacity: 0.7 }}>Combo parfait</div>
+            <div style={{ fontSize: 12, opacity: 0.7 }}>Combo</div>
             <div style={{ fontSize: 22, fontWeight: 700, color: COLORS.sage }}>x{combo}</div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 12, opacity: 0.7 }}>Pièces</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: COLORS.cream }}>🪙 {coins}</div>
           </div>
           <div style={{ textAlign: "right" }}>
             <div style={{ fontSize: 12, opacity: 0.7 }}>Réputation</div>
@@ -345,7 +364,33 @@ export default function OnionRingCafe() {
         </div>
       </div>
 
-      {!isOpen && (
+      {/* Onglets */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+        <button
+          className="tab-btn"
+          onClick={() => setView("cuisine")}
+          style={{
+            padding: "8px 16px", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13,
+            background: view === "cuisine" ? COLORS.gold : COLORS.panel,
+            color: view === "cuisine" ? COLORS.bg : COLORS.text,
+          }}
+        >
+          🍳 Cuisine
+        </button>
+        <button
+          className="tab-btn"
+          onClick={() => setView("deco")}
+          style={{
+            padding: "8px 16px", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13,
+            background: view === "deco" ? COLORS.gold : COLORS.panel,
+            color: view === "deco" ? COLORS.bg : COLORS.text,
+          }}
+        >
+          🎨 Déco
+        </button>
+      </div>
+
+      {view === "cuisine" && !isOpen && (
         <div style={{ background: COLORS.panel, border: `1px solid ${COLORS.coral}`, borderRadius: 12, padding: 16, marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>Le café ferme pour la journée... score final : <strong style={{ color: COLORS.gold }}>{score}</strong></div>
           <button onClick={restart} style={{ background: COLORS.gold, border: "none", borderRadius: 8, padding: "8px 16px", fontWeight: 700, cursor: "pointer", color: COLORS.bg }}>
@@ -354,61 +399,46 @@ export default function OnionRingCafe() {
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 20 }}>
-        <div style={{ background: COLORS.panel, borderRadius: 16, padding: 20 }}>
-          <h3 style={{ marginTop: 0, color: COLORS.gold, fontSize: 14 }}>FRITEUSE — choisis une saveur, reclique pour sortir</h3>
-          <div style={{ display: "flex", gap: 24, flexWrap: "wrap", paddingTop: 10, paddingBottom: 30 }}>
-            {baskets.map((b, i) => {
-              if (!b) return <Ring key={`empty-${i}`} empty onChooseRecipe={(rid) => addRing(i, rid)} />;
-              const quality = qualityFromProgress(b.progress);
-              return <Ring key={b.id} progress={b.progress} quality={quality} recipe={b.recipe} onClick={() => pullRing(i)} />;
-            })}
+      {view === "cuisine" ? (
+        <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 20 }}>
+          <div style={{ background: COLORS.panel, borderRadius: 16, padding: 20 }}>
+            <h3 style={{ marginTop: 0, color: COLORS.gold, fontSize: 14 }}>FRITEUSE — choisis une saveur, reclique pour sortir</h3>
+            <div style={{ display: "flex", gap: 24, flexWrap: "wrap", paddingTop: 10, paddingBottom: 30 }}>
+              {baskets.map((b, i) => {
+                if (!b) return <Ring key={`empty-${i}`} empty onChooseRecipe={(rid) => addRing(i, rid)} />;
+                const quality = qualityFromProgress(b.progress);
+                return <Ring key={b.id} progress={b.progress} quality={quality} recipe={b.recipe} onClick={() => pullRing(i)} />;
+              })}
+            </div>
+
+            <div style={{ fontSize: 11, opacity: 0.6, lineHeight: 1.6 }}>
+              🟡 Cru (0–{RAW_MAX}%) → 🟠 Parfait ({RAW_MAX}–{PERFECT_MAX}%) → 🟤 Trop cuit ({PERFECT_MAX}–{OVERCOOKED_MAX}%) → ⚫ Brûlé (perdu)
+              <br />
+              Recettes : {RECIPES.map((r) => `${r.emoji} ${r.label}`).join(" · ")}
+            </div>
+
+            <h3 style={{ color: COLORS.gold, fontSize: 14, marginTop: 24 }}>PLATEAU ({tray.length}/{TRAY_MAX})</h3>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", minHeight: 60 }}>
+              {tray.length === 0 && <div style={{ fontSize: 12, opacity: 0.5 }}>Vide pour l'instant</div>}
+              {tray.map((r) => (
+                <div key={r.id} className="tray-ring" style={{ width: 46, height: 46, borderRadius: "50%", background: QUALITY_COLOR[r.quality], border: `2px solid ${COLORS.bg}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: COLORS.bg }} title={`${RECIPE_BY_ID[r.recipe].label} — ${QUALITY_LABEL[r.quality]}`}>
+                  {RECIPE_BY_ID[r.recipe].emoji}
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div style={{ fontSize: 11, opacity: 0.6, lineHeight: 1.6 }}>
-            🟡 Cru (0–{RAW_MAX}%) → 🟠 Parfait ({RAW_MAX}–{PERFECT_MAX}%) → 🟤 Trop cuit ({PERFECT_MAX}–{OVERCOOKED_MAX}%) → ⚫ Brûlé (perdu)
-            <br />
-            Recettes : {RECIPES.map((r) => `${r.emoji} ${r.label}`).join(" · ")}
-          </div>
-
-          <h3 style={{ color: COLORS.gold, fontSize: 14, marginTop: 24 }}>PLATEAU ({tray.length}/{TRAY_MAX})</h3>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", minHeight: 60 }}>
-            {tray.length === 0 && <div style={{ fontSize: 12, opacity: 0.5 }}>Vide pour l'instant</div>}
-            {tray.map((r) => (
-              <div
-                key={r.id}
-                className="tray-ring"
-                style={{
-                  width: 46, height: 46, borderRadius: "50%",
-                  background: QUALITY_COLOR[r.quality],
-                  border: `2px solid ${COLORS.bg}`,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 14, color: COLORS.bg,
-                }}
-                title={`${RECIPE_BY_ID[r.recipe].label} — ${QUALITY_LABEL[r.quality]}`}
-              >
-                {RECIPE_BY_ID[r.recipe].emoji}
-              </div>
-            ))}
+          <div style={{ background: COLORS.panel, borderRadius: 16, padding: 20 }}>
+            <h3 style={{ marginTop: 0, color: COLORS.gold, fontSize: 14 }}>CLIENTS — clique un oignon du plateau puis un client</h3>
+            <ServeArea customers={customers} tray={tray} onServe={serve} />
           </div>
         </div>
-
-        <div style={{ background: COLORS.panel, borderRadius: 16, padding: 20 }}>
-          <h3 style={{ marginTop: 0, color: COLORS.gold, fontSize: 14 }}>CLIENTS — clique un oignon du plateau puis un client</h3>
-          <ServeArea customers={customers} tray={tray} onServe={serve} />
-        </div>
-      </div>
+      ) : (
+        <DecorShop coins={coins} owned={owned} equipped={equipped} onBuy={buyDecor} totalServed={totalServed} bestScore={bestScore} />
+      )}
 
       {toast && (
-        <div
-          key={toast.key}
-          className="toast-anim"
-          style={{
-            position: "fixed", bottom: 24, left: "50%",
-            background: toast.kind === "good" ? COLORS.sage : toast.kind === "bad" ? COLORS.coral : COLORS.goldDark,
-            color: COLORS.bg, padding: "8px 18px", borderRadius: 20, fontWeight: 700, fontSize: 13, boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
-          }}
-        >
+        <div key={toast.key} className="toast-anim" style={{ position: "fixed", bottom: 24, left: "50%", background: toast.kind === "good" ? COLORS.sage : toast.kind === "bad" ? COLORS.coral : COLORS.goldDark, color: COLORS.bg, padding: "8px 18px", borderRadius: 20, fontWeight: 700, fontSize: 13, boxShadow: "0 4px 12px rgba(0,0,0,0.4)" }}>
           {toast.msg}
         </div>
       )}
@@ -428,18 +458,7 @@ function ServeArea({ customers, tray, onServe }) {
       {tray.length > 0 && (
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {tray.map((r) => (
-            <button
-              key={r.id}
-              onClick={() => setSelectedRing(r.id)}
-              className="tray-ring"
-              style={{
-                width: 40, height: 40, borderRadius: "50%",
-                background: QUALITY_COLOR[r.quality],
-                border: selectedRing === r.id ? `3px solid ${COLORS.text}` : `2px solid ${COLORS.bg}`,
-                cursor: "pointer", fontSize: 12,
-              }}
-              title={`${RECIPE_BY_ID[r.recipe].label} — ${QUALITY_LABEL[r.quality]}`}
-            >
+            <button key={r.id} onClick={() => setSelectedRing(r.id)} className="tray-ring" style={{ width: 40, height: 40, borderRadius: "50%", background: QUALITY_COLOR[r.quality], border: selectedRing === r.id ? `3px solid ${COLORS.text}` : `2px solid ${COLORS.bg}`, cursor: "pointer", fontSize: 12 }} title={`${RECIPE_BY_ID[r.recipe].label} — ${QUALITY_LABEL[r.quality]}`}>
               {RECIPE_BY_ID[r.recipe].emoji}
             </button>
           ))}
@@ -449,29 +468,87 @@ function ServeArea({ customers, tray, onServe }) {
       <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 8 }}>
         {customers.length === 0 && <div style={{ fontSize: 12, opacity: 0.5 }}>Personne pour l'instant...</div>}
         {customers.map((c) => (
-          <button
-            key={c.id}
-            onClick={() => selectedRing && onServe(c.id, selectedRing)}
-            disabled={!selectedRing}
-            className="customer-row"
-            style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              background: COLORS.bg, border: `1px solid ${COLORS.gold}44`, borderRadius: 10,
-              padding: "10px 14px", cursor: selectedRing ? "pointer" : "default",
-              opacity: selectedRing ? 1 : 0.6, color: COLORS.text, transition: "border-color 0.15s",
-            }}
-          >
+          <button key={c.id} onClick={() => selectedRing && onServe(c.id, selectedRing)} disabled={!selectedRing} className="customer-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: COLORS.bg, border: `1px solid ${COLORS.gold}44`, borderRadius: 10, padding: "10px 14px", cursor: selectedRing ? "pointer" : "default", opacity: selectedRing ? 1 : 0.6, color: COLORS.text, transition: "border-color 0.15s" }}>
             <span style={{ fontWeight: 700 }}>🧑 {c.name}</span>
             <div style={{ flex: 1, height: 6, margin: "0 12px", borderRadius: 3, background: "#00000055", overflow: "hidden" }}>
-              <div
-                className={c.patience <= 25 ? "patience-low" : ""}
-                style={{ height: "100%", width: `${c.patience}%`, background: c.patience > 40 ? COLORS.sage : COLORS.coral, transition: "width 0.2s linear" }}
-              />
+              <div className={c.patience <= 25 ? "patience-low" : ""} style={{ height: "100%", width: `${c.patience}%`, background: c.patience > 40 ? COLORS.sage : COLORS.coral, transition: "width 0.2s linear" }} />
             </div>
-            <span style={{ fontSize: 11, opacity: 0.7 }}>
-              veut {RECIPE_BY_ID[c.wants].emoji} {RECIPE_BY_ID[c.wants].label}
-            </span>
+            <span style={{ fontSize: 11, opacity: 0.7 }}>veut {RECIPE_BY_ID[c.wants].emoji} {RECIPE_BY_ID[c.wants].label}</span>
           </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DecorShop({ coins, owned, equipped, onBuy, totalServed, bestScore }) {
+  const wallColor = DECOR_CATALOG.murs.find((i) => i.id === equipped.murs)?.color;
+  const floorColor = DECOR_CATALOG.sols.find((i) => i.id === equipped.sols)?.color;
+  const tableColor = DECOR_CATALOG.tables.find((i) => i.id === equipped.tables)?.color;
+  const plantEmoji = DECOR_CATALOG.plantes.find((i) => i.id === equipped.plantes)?.emoji;
+  const lumEmoji = DECOR_CATALOG.luminaire.find((i) => i.id === equipped.luminaire)?.emoji;
+
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1.3fr", gap: 20 }}>
+      {/* Aperçu de la salle */}
+      <div style={{ background: COLORS.panel, borderRadius: 16, padding: 20 }}>
+        <h3 style={{ marginTop: 0, color: COLORS.gold, fontSize: 14 }}>APERÇU DE LA SALLE</h3>
+        <div style={{ position: "relative", borderRadius: 14, overflow: "hidden", height: 220, background: wallColor, transition: "background 0.3s" }}>
+          {lumEmoji === "✨" && (
+            <>
+              <span className="sparkle" style={{ top: 10, left: 20 }}>✨</span>
+              <span className="sparkle" style={{ top: 16, left: 90, animationDelay: "0.3s" }}>✨</span>
+              <span className="sparkle" style={{ top: 8, left: 160, animationDelay: "0.6s" }}>✨</span>
+            </>
+          )}
+          {lumEmoji && lumEmoji !== "✨" && (
+            <div style={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", fontSize: 22 }}>{lumEmoji}</div>
+          )}
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 70, background: floorColor, transition: "background 0.3s" }} />
+          <div style={{ position: "absolute", bottom: 30, left: "50%", transform: "translateX(-50%)", width: 90, height: 44, borderRadius: 6, background: tableColor, transition: "background 0.3s", boxShadow: "0 4px 8px rgba(0,0,0,0.3)" }} />
+          {plantEmoji && <div style={{ position: "absolute", bottom: 34, right: 24, fontSize: 30 }}>{plantEmoji}</div>}
+        </div>
+
+        <div style={{ marginTop: 16, fontSize: 12, opacity: 0.75, lineHeight: 1.8 }}>
+          <div>🧾 Clients servis : <strong style={{ color: COLORS.cream }}>{totalServed}</strong></div>
+          <div>🏆 Meilleur score : <strong style={{ color: COLORS.cream }}>{bestScore}</strong></div>
+        </div>
+      </div>
+
+      {/* Boutique */}
+      <div style={{ background: COLORS.panel, borderRadius: 16, padding: 20 }}>
+        <h3 style={{ marginTop: 0, color: COLORS.gold, fontSize: 14 }}>BOUTIQUE — 🪙 {coins} pièces</h3>
+        {Object.entries(DECOR_CATALOG).map(([cat, items]) => (
+          <div key={cat} style={{ marginBottom: 18 }}>
+            <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 8 }}>{CATEGORY_LABELS[cat]}</div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              {items.map((item) => {
+                const isOwned = owned.has(item.id);
+                const isEquipped = equipped[cat] === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => onBuy(cat, item)}
+                    className="decor-card"
+                    style={{
+                      display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+                      padding: "10px 12px", minWidth: 84, borderRadius: 10, cursor: "pointer",
+                      background: COLORS.bg, border: isEquipped ? `2px solid ${COLORS.gold}` : "2px solid transparent",
+                      color: COLORS.text,
+                    }}
+                  >
+                    <div style={{ width: 28, height: 28, borderRadius: 8, background: item.color || COLORS.panel, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
+                      {item.emoji || ""}
+                    </div>
+                    <div style={{ fontSize: 11, fontWeight: 600 }}>{item.label}</div>
+                    <div style={{ fontSize: 10, opacity: 0.7 }}>
+                      {isEquipped ? "Installé" : isOwned ? "Équiper" : item.cost === 0 ? "Gratuit" : `🪙 ${item.cost}`}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         ))}
       </div>
     </div>
