@@ -28,6 +28,9 @@ const RECIPES = [
   { id: "epicee", label: "Épicée", emoji: "🌶️" },
   { id: "fromage", label: "Fromage", emoji: "🧀" },
   { id: "vegan", label: "Végane", emoji: "🌱" },
+  { id: "truffe", label: "Truffe", emoji: "🍄" },
+  { id: "miel", label: "Miel-piment", emoji: "🍯" },
+  { id: "curry", label: "Curry", emoji: "🍛" },
 ];
 const RECIPE_BY_ID = Object.fromEntries(RECIPES.map((r) => [r.id, r]));
 
@@ -38,29 +41,42 @@ const DECOR_CATALOG = {
     { id: "mur_sauge", label: "Sauge", cost: 30, color: "#5C6E4F" },
     { id: "mur_terracotta", label: "Terracotta", cost: 30, color: "#B5613A" },
     { id: "mur_prune", label: "Prune", cost: 45, color: "#5B3A56" },
+    { id: "mur_canard", label: "Bleu canard", cost: 50, color: "#1F5C5C" },
+    { id: "mur_moutarde", label: "Jaune moutarde", cost: 40, color: "#B8860B" },
   ],
   sols: [
     { id: "sol_clair", label: "Bois clair", cost: 0, color: "#C89B6D" },
     { id: "sol_fonce", label: "Bois foncé", cost: 25, color: "#6B4226" },
     { id: "sol_terracotta", label: "Carreaux terracotta", cost: 35, color: "#C1663B" },
+    { id: "sol_terrazzo", label: "Terrazzo", cost: 55, color: "#B7AFA3" },
   ],
   tables: [
     { id: "table_brut", label: "Bois brut", cost: 0, color: "#8B5E34" },
     { id: "table_marbre", label: "Marbre", cost: 45, color: "#D8D2C4" },
     { id: "table_nuit", label: "Bleu nuit", cost: 45, color: "#2E3A59" },
+    { id: "table_rotin", label: "Rotin", cost: 35, color: "#C4A468" },
   ],
   plantes: [
     { id: "plante_aucune", label: "Aucune", cost: 0, emoji: "" },
     { id: "plante_basilic", label: "Basilic", cost: 20, emoji: "🌿" },
     { id: "plante_oranger", label: "Oranger", cost: 50, emoji: "🍊" },
+    { id: "plante_cactus", label: "Cactus", cost: 15, emoji: "🌵" },
+    { id: "plante_bouquet", label: "Bouquet séché", cost: 35, emoji: "💐" },
   ],
   luminaire: [
     { id: "lum_ampoule", label: "Ampoule nue", cost: 0, emoji: "💡" },
     { id: "lum_guirlande", label: "Guirlande", cost: 40, emoji: "✨" },
     { id: "lum_lanterne", label: "Lanterne", cost: 60, emoji: "🏮" },
+    { id: "lum_bougies", label: "Bougies", cost: 25, emoji: "🕯️" },
+  ],
+  decoMurale: [
+    { id: "mural_aucun", label: "Aucune", cost: 0, emoji: "" },
+    { id: "mural_horloge", label: "Horloge", cost: 30, emoji: "🕐" },
+    { id: "mural_tableau", label: "Tableau", cost: 45, emoji: "🖼️" },
+    { id: "mural_miroir", label: "Miroir", cost: 55, emoji: "🪞" },
   ],
 };
-const CATEGORY_LABELS = { murs: "Murs", sols: "Sol", tables: "Tables", plantes: "Plantes", luminaire: "Éclairage" };
+const CATEGORY_LABELS = { murs: "Murs", sols: "Sol", tables: "Tables", plantes: "Plantes", luminaire: "Éclairage", decoMurale: "Décor mural" };
 
 let idCounter = 1;
 const nextId = () => idCounter++;
@@ -136,9 +152,9 @@ function writeSave({ coins, owned, equipped, totalServed, bestScore }) {
 function Ring({ progress, quality, recipe, onClick, empty, onChooseRecipe }) {
   if (empty) {
     return (
-      <div style={{ width: 92, height: 92, borderRadius: 18, border: `2px dashed ${COLORS.gold}55`, display: "grid", gridTemplateColumns: "1fr 1fr", gridTemplateRows: "1fr 1fr", gap: 2, padding: 4 }}>
+      <div style={{ width: 100, height: 100, borderRadius: 18, border: `2px dashed ${COLORS.gold}55`, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 2, padding: 4 }}>
         {RECIPES.map((r) => (
-          <button key={r.id} onClick={() => onChooseRecipe(r.id)} title={r.label} className="flavor-cell" style={{ background: "transparent", border: "none", cursor: "pointer", fontSize: 18, borderRadius: 8, color: COLORS.text }}>
+          <button key={r.id} onClick={() => onChooseRecipe(r.id)} title={r.label} className="flavor-cell" style={{ background: "transparent", border: "none", cursor: "pointer", fontSize: 15, borderRadius: 6, color: COLORS.text }}>
             {r.emoji}
           </button>
         ))}
@@ -544,6 +560,7 @@ function DecorShop({ coins, owned, equipped, onBuy, totalServed, bestScore, onRe
   const tableColor = DECOR_CATALOG.tables.find((i) => i.id === equipped.tables)?.color;
   const plantEmoji = DECOR_CATALOG.plantes.find((i) => i.id === equipped.plantes)?.emoji;
   const lumEmoji = DECOR_CATALOG.luminaire.find((i) => i.id === equipped.luminaire)?.emoji;
+  const muralEmoji = DECOR_CATALOG.decoMurale.find((i) => i.id === equipped.decoMurale)?.emoji;
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1.3fr", gap: 20 }}>
@@ -564,6 +581,7 @@ function DecorShop({ coins, owned, equipped, onBuy, totalServed, bestScore, onRe
           <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 70, background: floorColor, transition: "background 0.3s" }} />
           <div style={{ position: "absolute", bottom: 30, left: "50%", transform: "translateX(-50%)", width: 90, height: 44, borderRadius: 6, background: tableColor, transition: "background 0.3s", boxShadow: "0 4px 8px rgba(0,0,0,0.3)" }} />
           {plantEmoji && <div style={{ position: "absolute", bottom: 34, right: 24, fontSize: 30 }}>{plantEmoji}</div>}
+          {muralEmoji && <div style={{ position: "absolute", top: 40, left: 24, fontSize: 26 }}>{muralEmoji}</div>}
         </div>
 
         <div style={{ marginTop: 16, fontSize: 12, opacity: 0.75, lineHeight: 1.8 }}>
