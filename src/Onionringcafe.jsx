@@ -100,6 +100,38 @@ function defaultOwned() {
   return new Set(Object.values(DECOR_CATALOG).flatMap((items) => [items[0].id]));
 }
 
+// ---- Sauvegarde locale ----
+const SAVE_KEY = "onion-ring-cafe-save";
+
+function loadSave() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    return {
+      coins: typeof data.coins === "number" ? data.coins : 20,
+      owned: Array.isArray(data.owned) ? new Set(data.owned) : defaultOwned(),
+      equipped: data.equipped || defaultEquipped(),
+      totalServed: data.totalServed || 0,
+      bestScore: data.bestScore || 0,
+    };
+  } catch (e) {
+    console.warn("Sauvegarde illisible, on repart de zéro.", e);
+    return null;
+  }
+}
+
+function writeSave({ coins, owned, equipped, totalServed, bestScore }) {
+  try {
+    localStorage.setItem(
+      SAVE_KEY,
+      JSON.stringify({ coins, owned: Array.from(owned), equipped, totalServed, bestScore })
+    );
+  } catch (e) {
+    console.warn("Impossible de sauvegarder.", e);
+  }
+}
+
 // ---- Anneau de friture ----
 function Ring({ progress, quality, recipe, onClick, empty, onChooseRecipe }) {
   if (empty) {
@@ -152,12 +184,27 @@ export default function OnionRingCafe() {
   const toastTimeout = useRef(null);
   const isOpen = running && reputation > 0;
 
-  // Gestion / progression (persiste entre les journées, pas encore entre les sessions)
-  const [coins, setCoins] = useState(20);
-  const [owned, setOwned] = useState(defaultOwned);
-  const [equipped, setEquipped] = useState(defaultEquipped);
-  const [totalServed, setTotalServed] = useState(0);
-  const [bestScore, setBestScore] = useState(0);
+  // Gestion / progression — chargée depuis la sauvegarde locale si elle existe
+  const initialSave = useRef(loadSave()).current;
+  const [coins, setCoins] = useState(initialSave ? initialSave.coins : 20);
+  const [owned, setOwned] = useState(initialSave ? initialSave.owned : defaultOwned);
+  const [equipped, setEquipped] = useState(initialSave ? initialSave.equipped : defaultEquipped);
+  const [totalServed, setTotalServed] = useState(initialSave ? initialSave.totalServed : 0);
+  const [bestScore, setBestScore] = useState(initialSave ? initialSave.bestScore : 0);
+  const [justLoaded, setJustLoaded] = useState(!!initialSave);
+
+  // Sauvegarde automatique à chaque changement de progression
+  useEffect(() => {
+    writeSave({ coins, owned, equipped, totalServed, bestScore });
+  }, [coins, owned, equipped, totalServed, bestScore]);
+
+  useEffect(() => {
+    if (justLoaded) {
+      showToast("Progression chargée 💾", "good");
+      setJustLoaded(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const showToast = useCallback((msg, kind = "info") => {
     setToast({ msg, kind, key: nextId() });
@@ -279,6 +326,16 @@ export default function OnionRingCafe() {
       setCombo(0);
       showToast(`Ce n'est pas ce qu'iel a commandé... (+1)`, "bad");
     }
+  };
+
+  const resetProgress = () => {
+    localStorage.removeItem(SAVE_KEY);
+    setCoins(20);
+    setOwned(defaultOwned());
+    setEquipped(defaultEquipped());
+    setTotalServed(0);
+    setBestScore(0);
+    showToast("Progression réinitialisée", "neutral");
   };
 
   const restart = () => {
@@ -434,7 +491,7 @@ export default function OnionRingCafe() {
           </div>
         </div>
       ) : (
-        <DecorShop coins={coins} owned={owned} equipped={equipped} onBuy={buyDecor} totalServed={totalServed} bestScore={bestScore} />
+        <DecorShop coins={coins} owned={owned} equipped={equipped} onBuy={buyDecor} totalServed={totalServed} bestScore={bestScore} onReset={resetProgress} />
       )}
 
       {toast && (
@@ -481,7 +538,7 @@ function ServeArea({ customers, tray, onServe }) {
   );
 }
 
-function DecorShop({ coins, owned, equipped, onBuy, totalServed, bestScore }) {
+function DecorShop({ coins, owned, equipped, onBuy, totalServed, bestScore, onReset }) {
   const wallColor = DECOR_CATALOG.murs.find((i) => i.id === equipped.murs)?.color;
   const floorColor = DECOR_CATALOG.sols.find((i) => i.id === equipped.sols)?.color;
   const tableColor = DECOR_CATALOG.tables.find((i) => i.id === equipped.tables)?.color;
@@ -513,6 +570,17 @@ function DecorShop({ coins, owned, equipped, onBuy, totalServed, bestScore }) {
           <div>🧾 Clients servis : <strong style={{ color: COLORS.cream }}>{totalServed}</strong></div>
           <div>🏆 Meilleur score : <strong style={{ color: COLORS.cream }}>{bestScore}</strong></div>
         </div>
+
+        <div style={{ marginTop: 14, fontSize: 11, opacity: 0.5 }}>💾 Sauvegardé automatiquement dans ce navigateur</div>
+        <button
+          onClick={onReset}
+          style={{
+            marginTop: 10, background: "transparent", border: `1px solid ${COLORS.coral}88`,
+            color: COLORS.coral, borderRadius: 8, padding: "6px 12px", fontSize: 11, cursor: "pointer",
+          }}
+        >
+          Réinitialiser ma progression
+        </button>
       </div>
 
       {/* Boutique */}
